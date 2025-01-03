@@ -12,37 +12,23 @@ class ConvConformer(nn.Module):
         self.cfg = cfg
         self.num_classes = dataset.num_classes
         self.conv_block1 = nn.Sequential(
-            # ResNet(in_channel=7, out_channel=32),
-            DWResNet(in_channel=7, out_channel=32, first=True),
-            AGCARepeater(32),
+            ResNet(in_channel=7, out_channel=32),
             nn.AvgPool2d(kernel_size=(1, 2)),
         )
         self.conv_block2 = nn.Sequential(
-            # ResNet(in_channel=32, out_channel=64),
-            DWResNet(in_channel=32, out_channel=64, first=False),
-            AGCARepeater(64),
-            # nn.MaxPool2d(kernel_size=(2, 1)),
+            ResNet(in_channel=32, out_channel=64),
             nn.AvgPool2d(kernel_size=(1, 2)),
         )
         self.conv_block3 = nn.Sequential(
-            # ResNet(in_channel=64, out_channel=128),
-            DWResNet(in_channel=64, out_channel=128, first=False),
-            AGCARepeater(128),
-            # nn.MaxPool2d(kernel_size=(2, 1)),
+            ResNet(in_channel=64, out_channel=128),
             nn.AvgPool2d(kernel_size=(1, 2)),
         )
         self.conv_block4 = nn.Sequential(
-            # ResNet(in_channel=128, out_channel=256),
-            DWResNet(in_channel=128, out_channel=256, first=False),
-            AGCARepeater(256),
-            # nn.MaxPool2d(kernel_size=(2, 1)),
+            ResNet(in_channel=128, out_channel=256),
             nn.AvgPool2d(kernel_size=(2, 2)),
         )
 
         self.conformer_block = ConformerBlocks(encoder_dim=256, num_layers=2, num_attention_heads=4)
-        # self.conformer_blockdoa = ConformerBlocks(encoder_dim=256, num_layers=2, num_attention_heads=4)
-        self.attentionpooling = ASPModule(256)
-        # self.pooling = nn.AvgPool1d(4)
 
         self.fc_sed_track1 = nn.Linear(256, self.num_classes, bias=True)
         self.fc_sed_track2 = nn.Linear(256, self.num_classes, bias=True)
@@ -73,8 +59,6 @@ class ConvConformer(nn.Module):
 
         x_conv4 = x_conv4.mean(dim=3)  # (N, C, T)
         x_conv4 = x_conv4.permute(0, 2, 1)  # (N, T, C)
-
-        # # 拼接统计信息到原始数据
 
         x_conformer = self.conformer_block(x_conv4)
         x_conformer = self.attentionpooling(x_conformer)
